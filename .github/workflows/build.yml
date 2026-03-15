@@ -28,12 +28,15 @@ jobs:
       - name: Build conda package
         run: pixi build --output-dir ./output
 
-      # Each platform uploads its own artifact named after the platform so they
-      # can be addressed independently via gha:// URLs:
+      # Each platform uploads its own artifact named `hello-rattler-<platform>`.
+      # Rattler resolves the correct one automatically when you use the
+      # `{subdir}` placeholder in a gha:// URL:
       #
-      #   gha://<owner>/hello-rattler-gha/runs/<run-id>/hello-rattler-linux-64
-      #   gha://<owner>/hello-rattler-gha/runs/<run-id>/hello-rattler-osx-arm64
-      #   gha://<owner>/hello-rattler-gha/runs/<run-id>/hello-rattler-win-64
+      #   gha://wolfv/hello-rattler-gha/runs/<run-id>/hello-rattler-{subdir}
+      #
+      # Rattler substitutes {subdir} with the current platform (e.g. linux-64,
+      # osx-arm64, win-64) at resolve time, so callers don't need to know or
+      # hard-code the platform.
       - name: Upload conda package
         uses: actions/upload-artifact@v4
         with:
