@@ -1,0 +1,42 @@
+name: Build conda package
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (${{ matrix.target.platform }})
+    runs-on: ${{ matrix.target.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - { os: ubuntu-latest,  platform: linux-64   }
+          - { os: macos-latest,   platform: osx-arm64  }
+          - { os: windows-latest, platform: win-64     }
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: prefix-dev/setup-pixi@v0.8.0
+        with:
+          pixi-version: latest
+
+      - name: Build conda package
+        run: pixi build --output-dir ./output
+
+      # Each platform uploads its own artifact named after the platform so they
+      # can be addressed independently via gha:// URLs:
+      #
+      #   gha://<owner>/hello-rattler-gha/runs/<run-id>/hello-rattler-linux-64
+      #   gha://<owner>/hello-rattler-gha/runs/<run-id>/hello-rattler-osx-arm64
+      #   gha://<owner>/hello-rattler-gha/runs/<run-id>/hello-rattler-win-64
+      - name: Upload conda package
+        uses: actions/upload-artifact@v4
+        with:
+          name: hello-rattler-${{ matrix.target.platform }}
+          path: ./output/**/*.conda
+          if-no-files-found: error
